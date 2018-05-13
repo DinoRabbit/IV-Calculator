@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+    <style>
+    td select,
+    td input {
+      width: 150px;
+    }
+  </style>
+</head>
+
+<body>
+  
+  Pokemon IV Calculator (Recomended level 25+).
+  <br><br/>
+  <form name="calculator">
+    <table>
+	  <tr>
+        <td>Select A Stat To Calculate:</td>
+        <td>
+          <select name="stat">
+            <option value="1">Hit Points</option>
+            <option value="2" selected>Attack</option>
+            <option value="3">Defense</option>
+            <option value="4">Speed</option>
+            <option value="5">Special Attack</option>
+            <option value="6">Special Defense</option>
+          </select>
+        </td>
+      </tr>
+      <tr>
+        <td>Current Stat Value:</td>
+        <td>
+          <input name="statCurr" type="number" value="94" required>
+        </td>
+      </tr>
+	  <tr>
+        <td>Base Stat Value:</td>
+        <td>
+          <input name="statBase" type="number" value="90" required>
+        </td>
+      </tr>
+	  <tr>
+        <td>Pokemon's Level:</td>
+        <td>
+          <input name="level" type="number" value="43" required>
+        </td>
+      </tr>
+	  <tr>
+        <td>Effort Values:</td>
+        <td>
+          <input name="effort" type="number" value="0" required>
+        </td>
+      </tr>
+      <tr>
+        <td>Select The Pokemon's Nature:</td>
+        <td>
+          <select name="nature">
+            <option value="1">Adament</option>
+            <option value="2">Bashful</option>
+            <option value="3">Bold</option>
+            <option value="4">Brave</option>
+            <option value="5">Calm</option>
+            <option value="6">Careful</option>
+            <option value="7">Docile</option>
+            <option value="8">Gentle</option>
+			<option value="9">Hardy</option>
+			<option value="10">Hasty</option>
+			<option value="11">Impish</option>
+			<option value="12">Jolly</option>
+			<option value="13">Lax</option>
+			<option value="14">Lonely</option>
+			<option value="15" selected>Mild</option>
+			<option value="16">Modest</option>
+			<option value="17">Naive</option>
+			<option value="18">Naughty</option>
+			<option value="19">Quiet</option>
+			<option value="20">Quirky</option>
+			<option value="21">Rash</option>
+			<option value="22">Relaxed</option>
+			<option value="23">Sassy</option>
+			<option value="24">Serious</option>
+			<option value="25">Timid</option>
+          </select>
+        </td>
+      </tr>
+      
+    </table>
+	<br></br>
+	<table>
+	  <tr>
+	    <th>IV Total:</th>
+	    <th id="ivTotal"></th>
+	  </tr>
+	</table>
+  </form>
+  <a href="https://www.serebii.net/games/ivs.shtml" target = "_blank">Example IV Calculations</a> 
+  <script>
+    'use strict';
+  
+    let form = document.forms.calculator;
+	
+	//Set the onchange/oninput functions for each input field
+	form.stat.onchange = calculate;   
+	form.statCurr.oninput = calculate;
+	form.statBase.oninput = calculate;
+	form.level.oninput = calculate;
+	form.effort.oninput = calculate;
+	form.nature.onchange = calculate;
+      
+	  //This function will perform all calculations necessary
+      function calculate() {
+		
+		//First, we need to get the values in each input field
+		//we return from the function if any of the values are null/undefined/0
+		let stat = +form.stat.value;
+		if(!stat) return;
+		
+		let statCurr = +form.statCurr.value;
+		if(!statCurr) return;
+
+		let statBase = +form.statBase.value;
+		if(!statBase) return;
+		
+		let level = +form.level.value;
+		if(!level) return;
+		
+		let effort = +form.effort.value;
+		if(!effort) effort = 0;  //0 is allowed for EVs, but no null/undefined
+		
+		let nature = +form.nature.value;
+		if(!nature) return;
+		
+		//here we grab all of the rows in the document so we can collapse the row that 
+		//contains nature selection when our stat is set to Hit Points (Nature isn't used when looking at Hit Points)
+		let elems = document.querySelectorAll('tr');
+		if(stat == 1) {
+		  if(elems[elems.length - 2].style.visibility = 'visible')
+		    elems[elems.length - 2].style.visibility = 'collapse';
+		}
+		else {
+		  if(elems[elems.length-2].style.visibility = 'collapse')
+			elems[elems.length-2].style.visibility = 'visible';
+		}
+		
+		//This matrix is used to determine the nature bonus.  1.1 = beneficial nature, 0.9 = hindering nature, and 1 = neither
+		let matrix = [
+		  [1.1, 1, 0.9, 1.1, 0.9, 1, 1, 1, 1, 1, 1, 1, 1, 1.1, 1, 0.9, 1, 1.1, 1, 1, 1, 1, 1, 1, 0.9],
+		  [1, 1, 1.1, 1, 1, 1, 1, 0.9, 1, 0.9, 1.1, 1, 1.1, 0.9, 0.9, 1, 1, 1, 1, 1, 1, 1.1, 1, 1, 1],
+		  [1, 1, 1, 0.9, 1, 1, 1, 1, 1, 1.1, 1, 1.1, 1, 1, 1, 1, 1.1, 1, 0.9, 1, 1, 0.9, 0.9, 1, 1.1],
+		  [0.9, 1, 1, 1, 1, 0.9, 1, 1, 1, 1, 0.9, 0.9, 1, 1, 1.1, 1.1, 1, 1, 1.1, 1, 1.1, 1, 1, 1, 1],
+		  [1, 1, 1, 1, 1.1, 1.1, 1, 1.1, 1, 1, 1, 1, 0.9, 1, 1, 1, 0.9, 0.9, 1, 1, 0.9, 1, 1.1, 1, 1]
+		]; 
+		
+		let natBonus;
+		
+		if(stat > 1) natBonus = matrix[stat - 2][nature - 1];
+		
+		//Here we calculate the IVs and display it on the page (the first one is for Hit Points and the second is for all other stats) 
+		if(stat == 1)
+		  document.getElementById('ivTotal').innerHTML = Math.round(((statCurr - level - 10) * 100 / level) - 2 * statBase - (Math.floor(effort/4)));
+		else
+		  document.getElementById('ivTotal').innerHTML = Math.round(((Math.ceil(statCurr/natBonus) - 5) * 100/level) - 2 * statBase - (Math.floor(effort/4)));
+	  }
+
+	calculate();
+  
+  </script>
+ </body>
+</html>
